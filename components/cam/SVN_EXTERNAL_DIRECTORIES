@@ -1,0 +1,4 @@
+chem_proc                 https://svn-ccsm-models.cgd.ucar.edu/tools/proc_atm/chem_proc/trunk_tags/chem_proc5_0_03
+src/physics/carma/base    https://svn-ccsm-models.cgd.ucar.edu/carma/trunk_tags/carma3_49
+src/physics/clubb         https://svn-ccsm-models.cgd.ucar.edu/clubb_core/branch_tags/vendor_clubb_r8099_tags/vendor_clubb_r8099_n02
+src/physics/cosp2/src     https://github.com/CFMIP/COSPv2.0/tags/v2.0.3cesm/src
