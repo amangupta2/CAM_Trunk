@@ -220,8 +220,11 @@ contains
 
     do m = 1, ncnst
        mm = ifirst+m-1
-       call addfld(cnst_name(mm), (/ 'lev' /), 'A', 'kg/kg', cnst_longname(mm))
-       call addfld(src_names(m),  (/ 'lev' /), 'A', 'kg/kg/s', trim(cnst_name(mm))//' source/sink')
+       ! ag4680@nyu.edu : Setting age of air tracers for instantaeneous output'
+       call addfld(cnst_name(mm), (/ 'lev' /), 'I', 'kg/kg', cnst_longname(mm))
+       call addfld(src_names(m),  (/ 'lev' /), 'I', 'kg/kg/s',trim(cnst_name(mm))//' source/sink')
+       !call addfld(cnst_name(mm), (/ 'lev' /), 'A', 'kg/kg', cnst_longname(mm))
+       !call addfld(src_names(m),  (/ 'lev' /), 'A', 'kg/kg/s', trim(cnst_name(mm))//' source/sink')
 
        call add_default (cnst_name(mm), 1, ' ')
        call add_default (src_names(m),  1, ' ')
@@ -347,10 +350,15 @@ contains
     end do
 
     ! record tendencies on history files
-    call outfld (src_names(1), ptend%q(:,:,ixaoa1), pcols, lchnk)
-    call outfld (src_names(2), ptend%q(:,:,ixaoa2), pcols, lchnk)
-    call outfld (src_names(3), ptend%q(:,:,ixht),   pcols, lchnk)
-    call outfld (src_names(4), ptend%q(:,:,ixvt),   pcols, lchnk)
+    !call outfld (src_names(1), ptend%q(:,:,ixaoa1), pcols, lchnk)
+    !call outfld (src_names(2), ptend%q(:,:,ixaoa2), pcols, lchnk)
+    !call outfld (src_names(3), ptend%q(:,:,ixht),   pcols, lchnk)
+    !call outfld (src_names(4), ptend%q(:,:,ixvt),   pcols, lchnk)
+    ! ag4680@nyu.edu : Why would they write ptend instead of q and that too to src_names?
+    call outfld (c_names(1), state%q(:,:,ixaoa1), pcols, lchnk)
+    call outfld (c_names(2), state%q(:,:,ixaoa2), pcols, lchnk)
+    call outfld (c_names(3), state%q(:,:,ixht),   pcols, lchnk)
+    call outfld (c_names(4), state%q(:,:,ixvt),   pcols, lchnk)
 
     ! Set tracer fluxes
     do i = 1, ncol

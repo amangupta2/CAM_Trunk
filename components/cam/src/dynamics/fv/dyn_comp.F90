@@ -3047,7 +3047,11 @@ subroutine process_inidat(fh_ini, grid, dyn_in, fieldname, m_cnst)
       if (iam >= npes_xy) return
 
       ! Add random perturbation to temperature if requested
-      if ((pertlim /= 0._r8) .and. (.not. analytic_ic_active())) then
+      ! ag4680@nyu.edu : Changed the perturbation condition. removed the
+      ! analytic_ic_active() clause. Otherwise obtained axisymmetric winds with
+      ! the original conditions.
+      !if ((pertlim /= 0._r8) .and. (.not. analytic_ic_active())) then
+      if (pertlim /= 0._r8)  then
 
          if (masterproc) then
             write(iulog,*) sub//':  Adding random perturbation bounded by +/-', &

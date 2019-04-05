@@ -54,6 +54,28 @@
           that have only a small number of allowed values.
                                                                         -->
 
+<!-- ag4680@nyu.edu : Controlling the Polvani and Kushner stratosphere -->
+<entry id="pkstrat" type="logical" category="pkstrat"
+        group="pkstrat_nl" valid_values="">
+Set to true to use the Polvani and Kushner stratosphere
+</entry>
+
+<entry id="vgamma" type="real" category="pkstrat"
+        group="pkstrat_nl" valid_values="">
+The gamma value in the Polvani and Kushner stratosphere that represents the lapse rate in the polar stratosphere.  Default=2.
+</entry>
+
+<entry id="lat0" type="integer" category="pkstrat"
+        group="pkstrat_nl" valid_values="">
+The \phi_0 value in the PK02 stratosphere that defines the Polar Vortex boundary.  Default=-50
+</entry>
+
+<entry id="eps" type="integer" category="pkstrat"
+        group="pkstrat_nl" valid_values="">
+The \epsilon value in the PK02 Stratosphere to represent the hemispherical assymetry due to seasons.  Default=-10
+</entry>
+
+
 <!-- Nudging Parameters -->
 
 <entry id="Nudge_Model" type="logical" category="nudging"

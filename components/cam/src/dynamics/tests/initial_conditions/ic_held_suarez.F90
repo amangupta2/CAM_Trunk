@@ -55,6 +55,17 @@ CONTAINS
     integer                           :: ncnst
     character(len=*), parameter       :: subname = 'HS94_SET_IC'
 
+    ! ag4680@nyu.edu : Topography related parameters
+    ! phi0/1: Bottom and Top latitudinal extent
+    ! H is the zsurf in meters, knum = topography wavenumber
+    ! === begin ===
+    real(r8) :: H=3000., knum=2, phi0, lamb, phi1, phi, scale_H, zsurf
+    real(r8),parameter :: pi = 3.141592, grav = 9.81, R = 287.0 ! can also use inbuilt constants
+    integer :: NX,NY
+    ! === end ===
+
+
+
     allocate(mask_use(size(latvals)))
     if (present(mask)) then
       if (size(mask_use) /= size(mask)) then
@@ -110,18 +121,67 @@ CONTAINS
     end if
 
     if (present(PS)) then
-      where(mask_use)
-        PS = 100000.0_r8
-      end where
+      !where(mask_use)
+      !  PS = 100000.0_r8
+      !end where
+
+      ! ag4680@nyu.edu : defining surface pressure for the topography
+       ! This pressure is in hydrostatic balance with the geopotential
+       phi0 = 25.*pi/180. ! 25
+       phi1 = 65.*pi/180. ! 65
+       NX = size(lonvals)
+       NY = size(latvals)
+       scale_H = R*250.0_r8/grav ! Change for general runs
+
+                do m=1,NX
+                           phi = latvals(m)
+                           lamb = lonvals(m)
+                           if(mask_use(m)) then
+                                if ( (phi > phi0) .and. phi < phi1 ) then
+
+                                             ! Height of the Gerber-Polvani
+                                             ! topography
+                                             zsurf = H*cos(knum*lamb)*(sin(pi*((phi - phi0)/(phi1 - phi0) ) )**2 )
+
+                                            ! Hydrostatically balanced surface pressure (T_init = 250.0 for HS94)
+                                             PS(m) = 100000.0_r8*(exp(-zsurf/scale_H))
+
+                                   else
+                                             PS(m) = 100000.0_r8
+                                   end if
+                           end if
+                 end do
+
       if(masterproc .and. verbose_use) then
         write(iulog,*) '          PS initialized by "',subname,'"'
       end if
     end if
 
     if (present(PHIS)) then
-      where(mask_use)
-        PHIS = 0.0_r8
-      end where
+      !where(mask_use)
+      !  PHIS = 0.0_r8
+      !end where
+
+      ! ag4680@nyu.edu : Geopotential for the Gerber-Polvani topography
+       phi0 = 25.*pi/180. ! 25
+       phi1 = 65.*pi/180. ! 65
+       NX = size(lonvals)
+       NY = size(latvals)
+
+                do m=1,NX
+                           phi = latvals(m)
+                           lamb = lonvals(m)
+                           if(mask_use(m)) then
+                               if ( (phi > phi0) .and. phi < phi1 ) then
+                                    PHIS(m) = grav*H*cos(knum*lamb)*( sin(pi*((phi - phi0)/(phi1 - phi0) ) )**2 )
+                               else
+                                    PHIS(m) = 0.0_r8
+                               end if
+                           end if
+
+                 end do
+
+
       if(masterproc .and. verbose_use) then
         write(iulog,*) '          PHIS initialized by "',subname,'"'
       end if

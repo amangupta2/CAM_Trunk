@@ -1,15 +1,24 @@
 module held_suarez
-  !----------------------------------------------------------------------- 
-  ! 
-  ! Purpose: Implement idealized Held-Suarez forcings
-  !    Held, I. M., and M. J. Suarez, 1994: 'A proposal for the
-  !    intercomparison of the dynamical cores of atmospheric general
-  !    circulation models.'
-  !    Bulletin of the Amer. Meteor. Soc., vol. 75, pp. 1825-1830.
-  ! 
-  !-----------------------------------------------------------------------
-
+! ----------------------------------------------------------------------------------
+! Modified to inlude an option for the Polvani and Kushner (2002) , 
+! GRL, 29, 7, 10.1029/2001GL014284 (PK02) equilibrium temperature profile.
+! 
+! If pkstrat = .True. then Polvani and Kushner relaxation temperature profile
+! is used.  
+!
+! Namelist parameter: vgamma, sets the vortex strength (gamma parameter in PK02)
+!
+! Modifications are denoted by 
+! 
+! !PKSTRAT
+! blah blah blah
+! !END-PKSTRAT
+!
+! Isla Simpson 8th June 2017
+! ----------------------------------------------------------------------------------
   use shr_kind_mod, only: r8 => shr_kind_r8
+  use cam_logfile, only: iulog
+
 
   implicit none
   private
@@ -43,7 +52,18 @@ module held_suarez
   real(r8), allocatable :: pref_mid_norm(:)
   integer               :: pver                     ! Num vertical levels
 
-
+  !PKSTRAT
+  ! Forcing parameters for PK02 option
+  !integer :: lat0=50.
+  integer, parameter :: dellat=10.
+  integer, parameter :: dely=60.
+  !integer, parameter :: eps=-10. !(epsilon parameter in A4 of PK)
+  !integer :: eps !(epsilon parameter in A4 of PK)
+  integer, parameter :: delz=10. 
+  real(r8), parameter :: efoldstrat = 0.5_r8
+  real(r8), parameter :: kfstrat     = 1._r8/(86400._r8*efoldstrat)
+  integer, parameter :: pret=0.5*100. ! lower limit (Pa) for upper level damping
+  !END-PKSTRAT
 
 !======================================================================= 
 contains
@@ -66,7 +86,30 @@ contains
   end subroutine held_suarez_1994_init
 
   subroutine held_suarez_1994(pcols, ncol, clat, pmid, &
-       u, v, t, du, dv, s)
+       u, v, t, du, dv, s, pkstrat, vgamma, eps, lat0)
+    !----------------------------------------------------------------------- 
+    ! 
+    ! Purpose: Implement idealized Held-Suarez forcings
+    !    Held, I. M., and M. J. Suarez, 1994: 'A proposal for the
+    !    intercomparison of the dynamical cores of atmospheric general
+    !    circulation models.'
+    !    Bulletin of the Amer. Meteor. Soc., vol. 75, pp. 1825-1830.
+    ! 
+    ! 7th March 2017 (Isla Simpson) - modified to include the option of the
+    ! Polvani and Kushner (2002), GRL, 29, 7, 10.1029/2001GL014284 stratospheric
+    ! relaxation temperature profile
+    ! 
+    ! Modifications denoted by
+    !
+    !PKSTRAT
+    !blah blah blah
+    !END-PKSTRAT
+    !-----------------------------------------------------------------------
+
+    !PKSTRAT
+    use physconst,      only: rair, gravit ! Gas constant and gravity forpkstrat
+    !END-PKSTRAT
+
 
     !
     ! Input arguments
@@ -78,12 +121,20 @@ contains
     real(r8), intent(in)  :: u(pcols,pver)    ! Zonal wind (m/s)
     real(r8), intent(in)  :: v(pcols,pver)    ! Meridional wind (m/s)
     real(r8), intent(in)  :: t(pcols,pver)    ! Temperature (K)
-                                              !
+                                        
                                               ! Output arguments
                                               !
     real(r8), intent(out) :: du(pcols,pver)   ! Zonal wind tend
     real(r8), intent(out) :: dv(pcols,pver)   ! Meridional wind tend
     real(r8), intent(out) :: s(pcols,pver)    ! Heating rate
+
+   !PKSRAT
+    logical, intent(in) :: pkstrat !pkstrat=.True. to use the PK02 TEQ
+    real(r8), intent(in) :: vgamma !gamma parameter in PK02 (controling vortex strength) 
+    integer, intent(in) :: lat0 ! Polar Vortex strength
+    integer, intent(in) :: eps  ! hemispherical asymmetry
+   !END-PKSTRAT
+
     !
     !---------------------------Local workspace-----------------------------
     !
@@ -96,16 +147,71 @@ contains
     real(r8) :: cossq(ncol)   ! coslat**2
     real(r8) :: cossqsq(ncol) ! coslat**4
     real(r8) :: sinsq(ncol)   ! sinlat**2
+    real(r8) :: sinlat(ncol)  ! sin(latitude)
     real(r8) :: coslat(ncol)  ! cosine(latitude)
+
+    !PKSTRAT
+    real(r8) :: deglat(ncol) ! Latitude in degrees for columns
+    real(r8) :: pi !pi for computing latitude in degrees from clat
+    !END-PKSTRAT
+
+
     !
     !-----------------------------------------------------------------------
     !
+
+
+    ! ===================================================
+    ! Aman Gupta - Tropical Stratosphere winds relaxation
+    ! Variables
+    ! For tropical stratosphere damping
+    ! damptime=40 - relaxation time scale in the stratosphere (3-100 hPa)
+    ! damptime2=10 - relaxation time scale in the mesosphere  (0-3hPa)
+
+    !integer, parameter :: k_top=1, k_bot=48 ! 12(or 15) and 48 for L80, 8 and 24 for L40
+    ! k_top=15 still leaves some strong anomalies near the tropical Stratopause
+    real, parameter :: phi_rlx = 15., rlx_dev=5., damptime=40., damptime2=10.
+    real :: ueq, damp_coeff, damp_coeff_max
+    real :: fac, pr, rtau
+    logical :: relax_tropical_stratosphere = .true.
+    real :: u_sponge = 0., u_1hpa = -65., u_200hpa = -10.
+    ! ==================================================
+
+
+    !PKSTRAT
+    real(r8) :: vgammaperm !gamma in K/m (as opposed to K/km) 
+    real(r8) :: w, fac1, fac2, delt !weight function (Eq A2 in PK02)
+ 
+    !US standard atmosphere params
+      integer, parameter :: nstd=7 ! # of levels specified in US standard atmosphere
+      real(r8) :: pstd_norm(nstd) ! pressures of US standard atmosphere,normalized by PS =101325
+      real(r8) :: tstd(nstd) ! Temperutre of standard levels
+      real(r8) :: lapse(nstd) ! Lapse rate of standard levels 
+      real(r8) :: tvalstd ! Standard atmosphere T at current level
+      real(r8) :: tpv ! Polar vortex temperature (Eqn 3 of Kushner and Polvani 2004)
+      real(r8) :: pbase,lapsebase,tbase ! US standard parameters at base of layer
+      integer :: k2
+      real(r8) :: tstd100 ! standard atmosphere temperature at 100hPa
+
+
+      pstd_norm=(/ 1., 0.223361, 0.0540330, 0.00856668, 0.00109456, 0.000660636, 3.90468e-05/)
+      tstd=(/ 288.15, 216.65, 216.65, 228.65, 270.65, 270.65, 214.65 /)
+      lapse=(/ -0.0065, 0.0, 0.001, 0.0028, 0.0, -0.0028, -0.002 /)
+    !END-PKSTRAT
+
+      pi=4.*DATAN(1.D0) 
+
 
     do i = 1, ncol
       coslat (i) = cos(clat(i))
       sinsq  (i) = sin(clat(i))*sin(clat(i))
       cossq  (i) = coslat(i)*coslat(i)
       cossqsq(i) = cossq (i)*cossq (i)
+
+      !PKSTRAT 
+      deglat(i) = (clat(i)/pi)*180.
+      sinlat(i) = sin(clat(i)) 
+      !END-PKSTRAT
     end do
 
     !
@@ -123,6 +229,77 @@ contains
     ! Compute idealized radiative heating rates (as dry static energy)
     !
     !
+
+
+    !PK-STRAT
+    if (pkstrat) then 
+       tstd100=216.65_r8*(100._r8/110.906_r8)**(-1._r8*rair*0._r8/9.81_r8) !US standard atmosphere at 100hPa 
+       vgammaperm=vgamma/1000._r8 ! convert gamma param into K/m
+
+       !Set up US standard atmosphere
+       do k=1,pver
+         ! Determine US standard atmosphere params at base of layer
+         if (pref_mid_norm(k).lt.pstd_norm(nstd)) then 
+           pbase=pstd_norm(nstd)
+           lapsebase=lapse(nstd)
+           tbase=tstd(nstd)
+         else
+           do k2=1,nstd-1
+            if (pref_mid_norm(k).gt.pstd_norm(k2+1)) then 
+             pbase=pstd_norm(k2)
+             lapsebase=lapse(k2)
+             tbase=tstd(k2)
+             exit
+            endif
+           end do
+         end if
+
+         !US standard atmosphere at level  
+         tvalstd=tbase*(pref_mid_norm(k)/pbase)**(-1.*(rair*lapsebase/gravit))
+
+          ! Output can be found in cesm.log.*
+          !print *,"lat0 : ",lat0
+          !print *,"eps : ",eps
+          !print *,"gamma : ",vgamma
+
+         do i = 1,ncol
+           if (pmid(i,k).lt.1e4_r8) then !pre < 100hPa 
+             tpv=tstd100*(pmid(i,k)/1e4_r8)**(rair*vgammaperm/gravit)
+             ! ag4680 : Changed definition 
+                if ( lat0 .lt. 0 ) then
+                        w=0.5*(1-tanh( (deglat(i)-lat0)/dellat))
+                else 
+                        ! 1+tanh if lat0 in NH, else 1-tanh
+                        ! tanh is an odd function
+                        w=0.5*(1+tanh( (deglat(i)-lat0)/dellat))
+                end if
+                  !print *,'w = ',w
+             ! Original
+             trefa=(1-w)*tvalstd + w*tpv
+
+           else
+             fac1=tstd100
+             delt=dely*sinsq(i) + eps*sinlat(i) + delz*log(pmid(i,k)/1e5_r8)*cossq(i)
+             fac2=(315._r8-delt)*(pmid(i,k)/1e5_r8)**cappa
+             if (fac1.gt.fac2) then 
+               trefa=fac1
+             else
+               trefa=fac2
+             end if 
+           end if !end pre < 100hPa
+
+           if (pref_mid_norm(k) > sigmab) then
+             kt = ka + (ks - ka)*cossqsq(i)*(pref_mid_norm(k) - sigmab)/onemsig
+             s(i,k) = (trefa - t(i,k))*kt*cpair
+           else
+             s(i,k) = (trefa - t(i,k))*ka*cpair
+           end if
+
+         end do
+       end do
+     else  !using Held-Suarez TEQ
+    !END-PKSTRAT
+
     do k = 1, pver
       if (pref_mid_norm(k) > sigmab) then
         do i = 1, ncol
@@ -131,7 +308,7 @@ contains
           trefa = (trefc - 10._r8*cossq(i)*log((pmid(i,k)/psurf_ref)))*(pmid(i,k)/psurf_ref)**cappa
           trefa    = max(t00,trefa)
           s(i,k) = (trefa - t(i,k))*kt*cpair
-        end do
+       end do
       else
         do i = 1, ncol
           trefc   = 315._r8 - 60._r8*sinsq(i)
@@ -141,6 +318,9 @@ contains
         end do
       end if
     end do
+
+end if !end if pkstrat
+
     !
     ! Add diffusion near the surface for the wind fields
     !
@@ -151,7 +331,6 @@ contains
       end do
     end do
 
-    !
     do k = 1, pver
       if (pref_mid_norm(k) > sigmab) then
         kv  = kf*(pref_mid_norm(k) - sigmab)/onemsig
@@ -160,6 +339,77 @@ contains
           dv(i,k) = -kv*v(i,k)
         end do
       end if
+
+      ! Aman Gupta - Relax Tropical Stratosphere winds
+      if (pkstrat .and. relax_tropical_stratosphere) then
+		!print *, "Aman - R T SS Check"
+              ! for k_top = 12, k_bot = 48
+              ! used NE16L40 u(32:33,6:25) to interpolate, no more extrapolation at boundary
+              !data ueq/ &
+              !  0.0779, -1.3717, -4.0661, -8.4787,-15.0807,-23.7513,-32.8355,-40.0434,-43.4355,-42.3453,-39.6380,-38.0026,-37.0027,-36.0337,-34.9992, &
+              !-33.8718,-32.7309,-31.6324,-30.5424,-29.4377,-28.3466,-27.2888,-26.2570,-25.2353,-24.2025,-23.1466,-22.0797,-21.0252,-20.0201,-19.0549, &
+              !-18.0377,-16.9199,-15.7493,-14.5656,-13.3777,-12.2174,-11.1569 /
+
+               ! Define analytical damp_coeff
+               ! std dev of 10 is fine
+               ! gets cut off to 0 after phi_rlx=10
+               ! tanh smoothing near the lower ss only - centered at 90hPa
+        
+               ! pref_mid_norm is more like sigma (NLEV long) and >=0 and <=1
+               ! ncol and pcols are both = 16. Is everything done one spectral
+               ! element at a time? on the 4x4 element? 
+
+               ! pmid is in Pascals
+               !if ( (k .le. k_bot) .and. (k .ge. k_top) ) then
+                  rtau = damptime/damptime2
+                  damp_coeff_max = 1.0/(damptime*86400)
+                  do i=1,ncol
+                           pr=0.01*pmid(i,k)
+                           if (pr .le. 200) then
+                               ! single tanh switch at 100hPa
+                               !fac = exp( -1*( deglat(i)**2 )/(2*phi_rlx) )*( 0.5+0.5*tanh( -0.1*(0.01*pmid(i,k) - 90)) )
+                               fac = exp((-1*(deglat(i)**2)/(2*rlx_dev*rlx_dev)))*(0.5*(1+tanh(-0.1*(pr-200.))+(rtau-1.)*(1+tanh(-2*(pr-3))) ) )
+                               damp_coeff = damp_coeff_max*fac
+                                
+
+                                ! Define Analytical U_eq
+                                if ( (pr .gt. 0) .and. (pr .lt. 0.3) ) then
+                                        ! 0 near the model top
+                                        ueq = 0.
+                                elseif ( (pr .ge. 0.3) .and. (pr .le. 1) ) then
+                                        ! linear decrease from u_sponge(at 0.3hpa) to u_1hpa
+                                        ueq = u_1hpa + ((u_sponge - (u_1hpa))/(log(0.3)-log(1.)))*(log(pr)-log(1.))
+                                elseif ( (pr .gt. 1) .and. (pr .lt. 200) ) then
+                                        ! linear increase from u_1hpa to u_100hpa
+                                        ueq = u_200hpa + ((u_1hpa - (u_200hpa))/(log(1.)-log(200.)))*(log(pr)-log(200.)) + 10*sin((pi/(log(200.)-log(1.)))*log(pr))
+                                end if 
+
+                                !print *, "Aman : ", pr, ueq, rtau
+                                if ( ( (deglat(i)) .ge. -1*phi_rlx) .and. ( (deglat(i)) .le. phi_rlx) ) then
+                                    ! Most likely it is happening across longitudes
+                                    ! Understand the discretization better
+                                    du(i,k) = -1*damp_coeff*(u(i,k) - ueq)
+                                end if
+                            end if
+                 end do
+
+               !end if     
+    
+ 
+      end if
+ 
+      !PKSTRAT
+      !Add sponge layer in upper levels (see Appendix of PK02)
+      if (pkstrat) then 
+        do i = 1,ncol
+          if (pmid(i,k).lt.pret) then 
+            kv=kfstrat*((pret-pmid(i,k))/pret)**(2.)            
+            du(i,k) = -kv*u(i,k)
+            dv(i,k) = -kv*v(i,k)
+           endif !pmid < 0.5
+        end do
+      endif !pkstrat
+      !END-PKSTRAT 
     end do
 
   end subroutine held_suarez_1994

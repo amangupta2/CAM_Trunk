@@ -49,6 +49,11 @@ public :: &
    tracers_implements_cnst,   &! true if named constituent is implemented by this package
    tracers_init_cnst,         &! initialize constituent field
    tracers_init               ! initialize history fields, datasets
+   tracers_timestep_forcing   ! ag4680@nyu.edu : new function created to force tracer value daily
+                              ! Sets time dependent initial tracer values near
+                              ! the
+                              ! boundary every timestep
+
 
 integer, parameter :: num_names_max = 30
 integer, parameter :: num_analytic  = 8
@@ -318,13 +323,155 @@ subroutine tracers_init()
 
    do m = 1,test_tracer_num
       mm = ixtrct + m - 1
-      call addfld(cnst_name(mm), (/ 'lev' /), 'A', 'kg/kg', cnst_longname(mm))
+      ! ag4680@nyu.edu : Instantaneous write, not average
+      call addfld(cnst_name(mm), (/ 'lev' /), 'I', 'kg/kg', cnst_longname(mm))
+      !call addfld(cnst_name(mm), (/ 'lev' /), 'A', 'kg/kg', cnst_longname(mm))
       call add_default(cnst_name(mm), 1, ' ')
    end do
 
 end subroutine tracers_init
 
 !=========================================================================================
+
+
+
+!======================================================================
+! Aman Gupta ag4680@nyu.edu : Begin : This function is new. Created to force the
+! boundary value for
+! tracer at every time step
+! Function designed to compute only the clock tracer, delta tracer and pulse
+! tracer. Hence num_tracer = 3
+! In the main for-loop, thus, boundary values are mentioned for the 2 tracers
+subroutine tracers_timestep_forcing(state, ptend, dt)
+
+    use physics_types, only: physics_state, physics_ptend, physics_ptend_init
+    use cam_history,   only: outfld
+    use time_manager,  only: get_curr_time
+    use constituents,  only: pcnst
+    use ppgrid,        only: pcols
+
+    ! Arguments
+    type(physics_state), intent(inout) :: state              ! state variables
+    type(physics_ptend), intent(out)   :: ptend              ! package tendencies
+    real(r8),            intent(in)    :: dt                 ! timestep
+
+    !----------------- Local workspace-------------------------------
+
+    integer :: i, k
+    integer :: lchnk                          ! chunk identifier
+    integer :: ncol                           ! no. of column in chunk
+    logical  :: lq(pcnst)
+    character(len=16)  :: name                ! get tracer name
+    integer :: num_tracer                     ! get number of passive tracers
+    integer :: day,sec                        ! date variables
+    real    :: t                              ! tracer boundary condition(time) 
+    real    :: p_source                       ! tracer boundary layer
+    real(r8), allocatable :: pmid(:,:)        ! mid-point pressure
+
+    !------------------------------------------------------------------
+
+    ! Get or manually set tracer number
+    num_tracer=3          ! Set to 3 to include all tracers. 
+                          ! Ideally this should be same as nadv_tt in config_files/definition.xml
+    p_source = 70000.0_r8 ! p > p_source is the tracer source region
+
+    if (.not. tracers_flag) then
+       call physics_ptend_init(ptend,state%psetcols,'none') !Initialize an empty ptend for use with physics_update
+       return
+    end if
+
+    call get_curr_time(day,sec)
+    !print *,"get curr time -",day,' ',sec
+    t=day + sec/86400.0 ! t is in days
+
+    ! Do this for tracer indices
+    lq(:)      = .FALSE.
+    do i=1,num_tracer
+        lq(ixtrct+i-1) = .TRUE.
+    end do
+
+    call physics_ptend_init(ptend,state%psetcols, 'tracers', lq=lq)
+
+    lchnk = state%lchnk
+    ncol  = state%ncol
+    pmid  = state%pmid
+        ! Old definition only for clock tracer and num_tracer=1 
+        if (num_tracer .eq. 1) then
+        do k = 1, pver
+                ! For clock tracer
+                if (k >= pver-2 .and. k <= pver) then
+                        do i = 1, ncol
+                                    ! passive tracer count begins at ixtrct to
+                                    ! ixtrct + num_tracer -1
+                                    ! A 300 day spinup is chosen.
+                                    if (t > 300.0) then
+                                            state%q(i,k,ixtrct) = t
+                                    else
+                                            state%q(i,k,ixtrct) = 0.
+                                    end if
+                        end do
+                end if
+        end do
+        elseif (num_tracer .eq. 3) then
+        ! New definition for 3 tracers - clock, delta and pulse
+        do k = 1, pver
+                do i = 1, ncol
+                                ! passive tracer count begins in the register
+                                ! from 
+                                ! (ixtrct) to (ixtrct + num_tracer -1)
+                                if (pmid(i,k) > 70000.) then
+
+                                ! Clock Tracer
+                                ! A 300 days spinup is chosen.
+                                        if (t > 300.) then
+                                            state%q( i, k, ixtrct) = t
+                                        else
+                                            state%q( i, k, ixtrct) = 0.
+                                        end if
+
+                                ! Delta Tracer : Force the boundary layer to
+                                ! erode all at once
+                                        if (t > 300. .and. t <= 330.) then
+                                            state%q( i, k, ixtrct+1) = 1.
+                                        else
+                                            state%q( i, k, ixtrct+1) = 0.
+                                        end if
+
+                                ! Pulse Tracer : Let the bndary layer erode
+                                ! naturally
+                                        if (t <= 300.) then
+                                            state%q( i, k, ixtrct+2) = 0.
+                                        else if (t > 300. .and. t < 330.) then
+                                            state%q( i, k, ixtrct+2) = 1.
+                                        else if (t > 330.) then
+                                            ! do nothing
+                                        end if
+                               end if
+                end do
+        end do
+        end if
+
+        ! Outputting the values to the history files
+        do i=1,num_tracer
+            name =  get_tracer_name(i)
+            ! for simple physics the tracer order in the register is : (a) sphum(1) + (b)
+            ! tracers(num_tracer) + (c) aoa_tracers(4)
+            call outfld (name, state%q(:,:,i+ixtrct-1), pcols, lchnk)
+        end do
+
+end subroutine tracers_timestep_forcing
+
+! ag4680@nyu.edu : END
+
+
+
+
+
+
+
+
+
+
 
 subroutine test_func_set(name, latvals, lonvals, mask, q)
 

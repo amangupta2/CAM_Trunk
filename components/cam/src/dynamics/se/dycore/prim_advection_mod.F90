@@ -1102,8 +1102,14 @@ contains
       !      
       ttmp(:,:,:,1)=elem(ie)%state%v(:,:,1,:,np1)*dp_star_moist
       ttmp(:,:,:,2)=elem(ie)%state%v(:,:,2,:,np1)*dp_star_moist
+
+
       ! remap with PPM filter: call remap1(ttmp,np,1,2,2,dp_star_moist,dp_moist)
+      ! ag4680@nyu.edu : Original definition
       call remap1_nofilter(ttmp,np,2,dp_star_moist,dp_moist)
+      ! replaced to the following to increase vertical diffusion
+      ! Suggested by Peter : for d2xv runs : PPM Filter
+      !call remap1(ttmp,np,1,2,2,dp_star_moist,dp_moist)
       
       if ( .not. se_prescribed_wind_2d ) &
            elem(ie)%state%v(:,:,1,:,np1)=ttmp(:,:,:,1)*dp_inv

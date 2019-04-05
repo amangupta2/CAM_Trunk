@@ -3237,6 +3237,7 @@ if ($waccm_phys or
     add_default($nl, 'use_gw_front'     , 'val'=>'.true.');
     add_default($nl, 'use_gw_convect_dp', 'val'=>'.true.');
     my $hdepth_scaling = '0.25D0' ;
+    # ag4680@nyu.edu : This condition is different from physgrid. Beware!
     if ($nl->get_value('qbo_use_forcing') =~ /$TRUE/io) {
        $hdepth_scaling = '1.D0' ;
        add_default($nl, 'qbo_cyclic','val'=>'.true.');

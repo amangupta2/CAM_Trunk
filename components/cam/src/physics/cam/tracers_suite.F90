@@ -54,7 +54,13 @@ function get_tracer_name(n)
 
    ! Local variables
    character(len=5), dimension(trac_names), parameter :: & ! constituent names
-      tracer_names  =  (/ 'TT_LW', 'TT_MD', 'TT_HI', 'TTRMD' , 'TT_UN'/)
+   ! ag4680@nyu.edu : Changes tracer names : 
+   ! Clock tracer - to compute age
+   ! Delta and Pulse Tracer : for the green's function and age spectrum
+   ! Sine Tracer : for a tracer with seasonal cycle.
+   tracer_names  =  (/ 'CLOCK', 'DELTA', 'PULSE', 'SINE' , 'TT_UN'/)
+
+!      tracer_names  =  (/ 'TT_LW', 'TT_MD', 'TT_HI', 'TTRMD' , 'TT_UN'/)
 
    integer :: nbase  ! Corresponding base tracer index
    integer :: ncopy  ! No. of copies of base tracers
@@ -109,15 +115,21 @@ subroutine init_cnst_tr(m, latvals, lonvals, mask, q)
 
    nbase = mod(m-1,trac_names)+1
 
+   ! ag4680@nyu.edu : Changed default initialization functions for default tracers
    if ( nbase == 1 ) then
-      call init_cnst_lw(latvals, lonvals, mask, q)
+      call init_cnst_clock(latvals, lonvals, mask, q)
+      !call init_cnst_lw(latvals, lonvals, mask, q)
    else if ( nbase == 2 ) then
-      call init_cnst_md(latvals, lonvals, mask, q)
+      call init_cnst_delta(latvals, lonvals, mask, q)
+      !call init_cnst_md(latvals, lonvals, mask, q)
    else if ( nbase == 3 ) then
-      call init_cnst_hi(latvals, lonvals, mask, q)
+      call init_cnst_pulse(latvals, lonvals, mask, q)
+      !call init_cnst_hi(latvals, lonvals, mask, q)
    else if ( nbase == 4 ) then
-      call init_cnst_md(latvals, lonvals, mask, q, rev_in=1)
+      call init_cnst_sine(latvals, lonvals, mask, q)
+      !call init_cnst_md(latvals, lonvals, mask, q, rev_in=1)
    else if ( nbase == 5 ) then
+     ! ag4680@nyu.edu : This is unchanged for now
       call init_cnst_un(latvals, lonvals, mask, q)
    else
       write(iulog,*) 'tracers_suite:init_cnst_tr()'
@@ -126,6 +138,102 @@ subroutine init_cnst_tr(m, latvals, lonvals, mask, q)
    endif
       
 end subroutine init_cnst_tr
+
+!======================================================================
+! Begin ag4680@nyu.edu changes
+! ag4680@nyu.edu : initialize clock tracer to 0 everywhere
+subroutine init_cnst_clock(latvals, lonvals, mask, q)
+
+   ! Initialize test tracer CLK
+   ! Arguments
+   real(r8), intent(in)  :: latvals(:) ! lat in degrees (ncol)
+   real(r8), intent(in)  :: lonvals(:) ! lon in degrees (ncol)
+   logical,  intent(in)  :: mask(:)    ! Only initialize where .true.
+   real(r8), intent(out) :: q(:,:)    ! kg tracer/kg dry air (gcol,plev)
+
+   ! Local
+   integer :: indx, k
+   !-----------------------------------------------------------------------
+
+      do k = 1, size(q, 2)
+          where(mask)
+               q(:,k) = 0.0_r8
+          end where
+      end do
+
+end subroutine init_cnst_clock
+
+subroutine init_cnst_delta(latvals, lonvals, mask, q)
+
+   ! Initialize test tracer DELTA
+   ! No Tracer 
+
+   ! Arguments
+   real(r8), intent(in)  :: latvals(:) ! lat in degrees (ncol)
+   real(r8), intent(in)  :: lonvals(:) ! lon in degrees (ncol)
+   logical,  intent(in)  :: mask(:)    ! Only initialize where .true.
+   real(r8), intent(out) :: q(:,:)    ! kg tracer/kg dry air (gcol,plev)
+
+   ! Local
+   integer :: indx, k
+   !-----------------------------------------------------------------------
+
+      do k = 1, size(q, 2)
+          where(mask)
+               q(:,k) = 0.0_r8
+          end where
+      end do
+
+end subroutine init_cnst_delta
+
+subroutine init_cnst_pulse(latvals, lonvals, mask, q)
+
+   ! Initialize test tracer PULSE
+   ! No Tracer 
+
+   ! Arguments
+   real(r8), intent(in)  :: latvals(:) ! lat in degrees (ncol)
+   real(r8), intent(in)  :: lonvals(:) ! lon in degrees (ncol)
+   logical,  intent(in)  :: mask(:)    ! Only initialize where .true.
+   real(r8), intent(out) :: q(:,:)    ! kg tracer/kg dry air (gcol,plev)
+
+   ! Local
+   integer :: indx, k
+   !-----------------------------------------------------------------------
+
+      do k = 1, size(q, 2)
+           where(mask)
+               q(:,k) = 0.0_r8
+           end where
+      end do
+
+end subroutine init_cnst_pulse
+
+subroutine init_cnst_sine(latvals, lonvals, mask, q)
+
+   ! Initialize test tracer SINE
+   ! No Tracer 
+
+   ! Arguments
+   real(r8), intent(in)  :: latvals(:) ! lat in degrees (ncol)
+   real(r8), intent(in)  :: lonvals(:) ! lon in degrees (ncol)
+   logical,  intent(in)  :: mask(:)    ! Only initialize where .true.
+   real(r8), intent(out) :: q(:,:)    ! kg tracer/kg dry air (gcol,plev)
+
+   ! Local
+   integer :: indx, k
+   !-----------------------------------------------------------------------
+
+      do k = 1, size(q, 2)
+           where(mask)
+               q(:,k) = 0.0_r8
+           end where
+      end do
+
+end subroutine init_cnst_sine
+
+!--------- End ag4680@nyu.edu changes
+
 
 !======================================================================
 

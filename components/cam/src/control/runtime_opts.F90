@@ -95,6 +95,12 @@ subroutine read_namelist(nlfilename, single_column, scmlat, scmlon)
    use ionosphere_interface,only: ionosphere_readnl
    use qneg_module,         only: qneg_readnl
 
+   ! ag4680@nyu.edu
+   !PKSTrAT
+   use held_suarez_cam,     only: pkstrat_readnl
+   !END-PKSTRAT
+
+
    !---------------------------Arguments-----------------------------------
 
    character(len=*), intent(in) :: nlfilename
@@ -189,6 +195,11 @@ subroutine read_namelist(nlfilename, single_column, scmlat, scmlon)
    call dyn_readnl(nlfilename)
    call ionosphere_readnl(nlfilename)
    call qneg_readnl(nlfilename)
+
+! ag4680@nyu.edu : Add for PK stratosphere
+!PKSTRAT
+   call pkstrat_readnl(nlfilename)
+!END-PKSTRAT
 
 end subroutine read_namelist
 

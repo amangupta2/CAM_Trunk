@@ -85,6 +85,18 @@
 <ncdata dyn="fv" hgrid="4x5"     nlev="30" chem="trop_strat_mam4_vbs" ic_ymd="101" >atm/cam/inic/fv/trop_strat_mam3_chem_2000-01-01_4x5_L30_c121015.nc</ncdata>
 <ncdata dyn="fv" hgrid="1.9x2.5" nlev="30" chem="trop_strat_mam4_vbs" ic_ymd="101" >atm/cam/inic/fv/trop_strat_mam3_chem_2000-01-01_1.9x2.5_L30_c121015.nc</ncdata>
 
+
+<!--- ag4680@nyu.edu : ICs added for CAM-FV L40 and L80 PK Runs --->
+<ncdata dyn="fv"  hgrid="1.9x2.5"   nlev="40"  ic_ymd="101"     >atm/cam/inic/fv/HS1994.96x144.L40.hybrid.nc</ncdata>
+<ncdata dyn="fv"  hgrid="1.9x2.5"   nlev="80"  ic_ymd="101"     >atm/cam/inic/fv/HS1994.96x144.L80.hybrid.nc</ncdata>
+<ncdata dyn="fv"  hgrid="1.9x2.5"   nlev="40"  >atm/cam/inic/fv/HS1994.96x144.L40.hybrid.nc</ncdata>
+<ncdata dyn="fv"  hgrid="1.9x2.5"   nlev="80"  >atm/cam/inic/fv/HS1994.96x144.L80.hybrid.nc</ncdata>
+<ncdata dyn="fv"  hgrid="0.9x1.25"   nlev="40"  >atm/cam/inic/fv/HS1994.192x288.L40.hybrid.nc</ncdata>
+<ncdata dyn="fv"  hgrid="0.9x1.25"   nlev="80"  >atm/cam/inic/fv/HS1994.192x288.L80.hybrid.nc</ncdata>
+<!--  ag4680@nyu.edu : Ended -->
+
+
+
 <ncdata dyn="fv"  hgrid="4x5"       nlev="26"  chem="trop_mozart" ic_ymd="901" >atm/cam/chem/trop_mozart/ic/cami_0000-09-01_4x5_L26_c060217.nc</ncdata>
 <ncdata dyn="fv"  hgrid="10x15"     nlev="26"  chem="trop_mozart" ic_ymd="901" >atm/cam/chem/trop_mozart/ic/cami_0000-09-01_10x15_L26_c060216.nc</ncdata>
 
@@ -168,6 +180,17 @@
 <ncdata dyn="se" hgrid="ne30np4"  nlev="32"  aquaplanet="1" ic_ymd="101" >atm/cam/inic/se/ape_cam6_ne30np4_L32_c170509.nc</ncdata>
 <ncdata dyn="se" hgrid="ne120np4"  nlev="32"  aquaplanet="1" ic_ymd="101" >atm/cam/inic/se/ape_cam6_ne120np4_L32_c170908.nc</ncdata>
 <ncdata dyn="se" hgrid="ne240np4"  nlev="32"  aquaplanet="1" ic_ymd="101" >atm/cam/inic/se/ape_cam6_ne240np4_L32_c170908.nc</ncdata>
+
+
+<!-- ag4680@nyu.edu : Added ICs for CAM-SE for L40 and L80 PK runs -->
+<ncdata dyn="se" hgrid="ne16np4"  nlev="40"                          >atm/cam/inic/se/HS1994.ne16np4_L40_hybrid.nc</ncdata>
+<ncdata dyn="se" hgrid="ne16np4"  nlev="80"                          >atm/cam/inic/se/HS1994.ne16np4_L80_hybrid.nc</ncdata>
+<ncdata dyn="se" hgrid="ne30np4"  nlev="40"                          >atm/cam/inic/se/HS1994.ne30np4_L40_hybrid.nc</ncdata>
+<ncdata dyn="se" hgrid="ne30np4"  nlev="80"                          >atm/cam/inic/se/HS1994.ne30np4_L80_hybrid.nc</ncdata>
+<ncdata dyn="se" hgrid="ne120np4"  nlev="40"                          >atm/cam/inic/se/HS1994.ne120np4_L40_hybrid.nc</ncdata>
+<ncdata dyn="se" hgrid="ne120np4"  nlev="80"                          >atm/cam/inic/se/HS1994.ne120np4_L80_hybrid.nc</ncdata>
+<!-- ag4680@nyu.edu : Ended -->
+
 
 <ncdata dyn="se" hgrid="ne5np4"   nlev="66">atm/waccm/ic/wa3_ne5np4_1950_spinup.cam2.i.1960-01-01-00000_c150810.nc</ncdata>
 <ncdata dyn="se" hgrid="ne30np4"  nlev="70">atm/waccm/ic/waccm5_1850_ne30np4_L70_0001-01-11-00000_c151217.nc</ncdata>

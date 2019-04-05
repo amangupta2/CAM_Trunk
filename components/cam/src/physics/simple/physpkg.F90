@@ -25,6 +25,7 @@ module physpkg
   use cam_logfile,     only: iulog
   use cam_abortutils,  only: endrun
   use shr_sys_mod,     only: shr_sys_flush
+  use aoa_tracers,     only: aoa_tracers_register ! ag4680@nyu.edu
 
   implicit none
   private
@@ -119,6 +120,13 @@ contains
 
     ! Register test tracers
     call tracers_register()
+
+    ! Register Age of Air tracers
+    ! Uncomment this if you want to use default CAM age of air suite with simple
+    ! physics. At present, only unleashed in WACCM. Change the setting in the
+    ! bld/configure as well.
+    ! ag4680@nyu.edu : calling aoa_tr_reg in simple phys.
+    !call aoa_tracers_register()
 
     ! All tracers registered, check that the dimensions are correct
     call cnst_chk_dim()
@@ -450,6 +458,12 @@ contains
     use dycore,          only: dycore_is
     use check_energy,    only: calc_te_and_aam_budgets
     use cam_history,     only: hist_fld_active
+    ! Added by ag4680@nyu.edu begin =========
+    use aoa_tracers,     only: aoa_tracers_timestep_tend
+    use tracers,         only: tracers_timestep_forcing 
+    use check_energy,    only: calc_te_and_aam_budgets, check_tracers_data, check_tracers_init, check_tracers_chng
+    ! ag4680@nyu.edu end =========
+
 
     ! Arguments
     !
@@ -460,6 +474,9 @@ contains
     type(physics_state),       intent(inout) :: state
     type(physics_tend ),       intent(inout) :: tend
     type(physics_buffer_desc), pointer       :: pbuf(:)
+
+    ! ag4680@nyu.edu : Added tracerint for clock tracers and age of air
+    type(check_tracers_data):: tracerint             ! tracer mass integrals and cummulative boundary fluxes
 
     !---------------------------Local workspace-----------------------------
 
@@ -482,6 +499,15 @@ contains
     real(r8) :: tmp_ps    (pcols)            ! tmp space
     !--------------------------------------------------------------------------
 
+    !---------------------------Local workspace----------------------------
+    ! ag4680@nyu.edu : Adding these 3 for AOA
+    ! === begin ===
+    type(physics_ptend)                      :: ptend               ! indivdual parameterization tendencies
+    integer                                  :: nstep               ! current timestep number
+    real(r8)                                 :: zero(pcols)         ! array of zeros
+    ! === end ===
+
+
     ! number of active atmospheric columns
     ncol  = state%ncol
     ! Associate pointers with physics buffer fields
@@ -502,6 +528,25 @@ contains
       allocate(cldiceini(pcols, pver))
       cldiceini = 0.0_r8
     end if
+
+
+    !===================================================
+    ! Source/sink terms for advected tracers.
+    !===================================================
+    ! ag4680@nyu.edu : Evolving AOA tracers and updating physics
+    call t_startf('adv_tracer_src_sink')
+
+    ! ag4680@nyu.edu : function created to force tracer boundary value each time step
+    call tracers_timestep_forcing(state, ptend, ztodt)
+    call physics_update(state, ptend, ztodt, tend)
+    call aoa_tracers_timestep_tend(state, ptend, cam_in%cflx, cam_in%landfrac,ztodt)
+    call physics_update(state, ptend, ztodt, tend)
+    call check_tracers_chng(state, tracerint, "aoa_tracers_timestep_tend", nstep, ztodt,   &
+         cam_in%cflx)
+
+    call t_stopf('adv_tracer_src_snk')
+
+    ! ag4680@nyu.edu : =========== AOA End ==============
 
     call calc_te_and_aam_budgets(state, 'pAP')
 
@@ -803,6 +848,7 @@ contains
     !--------------------------------------------------------------------------
     use physics_types,       only: physics_state
     use physics_buffer,      only: physics_buffer_desc
+    use aoa_tracers,         only: aoa_tracers_timestep_init
 
     implicit none
 
@@ -813,6 +859,9 @@ contains
     type(physics_buffer_desc), pointer                 :: pbuf2d(:,:)
 
     !--------------------------------------------------------------------------
+    ! ag4680@nyu.edu : added to initialize AOA evolution. 
+    ! Usually called only for WACCM
+    call aoa_tracers_timestep_init(phys_state)
 
   end subroutine phys_timestep_init
 

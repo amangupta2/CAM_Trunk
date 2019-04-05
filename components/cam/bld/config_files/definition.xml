@@ -166,7 +166,9 @@ Total number of advected constituents.  By default this is computed by
 configure.  However, configure has a commandline argument to allow the user
 to override the default.
 </entry>
-<entry id="nadv_tt" value="0">
+<!-- ag4680@nyu.edu : adding default number of passive tracers -->
+<!-- CLOCK, DELTA AND PULSE; Setting 0 to 3 -->
+<entry id="nadv_tt" value="03">
 Total number of advected test tracers.
 </entry>
 <entry id="age_of_air_trcs" valid_values="0,1" value="0">
