@@ -162,7 +162,7 @@ contains
 
 
     ! ===================================================
-    ! Aman Gupta - Tropical Stratosphere winds relaxation
+    ! begin ag4680@nyu.edu : Aman Gupta - Tropical Stratosphere winds relaxation
     ! Variables
     ! For tropical stratosphere damping
     ! damptime=40 - relaxation time scale in the stratosphere (3-100 hPa)
@@ -175,7 +175,7 @@ contains
     real :: fac, pr, rtau
     logical :: relax_tropical_stratosphere = .true.
     real :: u_sponge = 0., u_1hpa = -65., u_200hpa = -10.
-    ! ==================================================
+    ! end ==================================================
 
 
     !PKSTRAT
@@ -340,7 +340,7 @@ end if !end if pkstrat
         end do
       end if
 
-      ! Aman Gupta - Relax Tropical Stratosphere winds
+      ! begin ag4680@nyu.edu : Aman Gupta - Relax Tropical Stratosphere winds
       if (pkstrat .and. relax_tropical_stratosphere) then
 		!print *, "Aman - R T SS Check"
               ! for k_top = 12, k_bot = 48
@@ -397,7 +397,8 @@ end if !end if pkstrat
     
  
       end if
- 
+      ! end : Tropical Stratospher relaxation 
+
       !PKSTRAT
       !Add sponge layer in upper levels (see Appendix of PK02)
       if (pkstrat) then 

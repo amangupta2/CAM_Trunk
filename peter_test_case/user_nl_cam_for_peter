@@ -1,0 +1,17 @@
+! Users should add all user specific namelist changes below in the form of 
+! namelist_var = new_namelist_value 
+
+ncdata='/glade/scratch/agupta/model_output/CESM/inputdata/atm/cam/inic/se/HS1994.ne16np4_L40_hybrid.nc'
+!use_topo_file = .true.
+!bnd_topo='/glade/scratch/agupta/model_output/CESM/inputdata/atm/cam/topo/ne16np4l40k2h3_aoa_topo.nc'
+analytic_ic_type = 'held_suarez_1994'
+pkstrat=.true.
+vgamma=4.
+lat0=50
+eps=10
+interpolate_output=.true., .true., .true.
+nhtfrq=0,-24
+mfilt=1,365
+fincl2 = 'U:I','V:I','T:I','PS:I','OMEGA:I','CLOCK'
+inithist = 'ENDOFRUN'
+inithist_all = .true. 
