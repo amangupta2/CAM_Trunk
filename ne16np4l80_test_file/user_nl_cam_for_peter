@@ -2,7 +2,7 @@
 ! namelist_var = new_namelist_value 
 
 
-ncdata='/glade/scratch/agupta/model_output/CESM/inputdata/atm/cam/inic/se/ic_ne16np4l80k2h3_aoa_150days.nc'
+ncdata='/glade/scratch/agupta/model_output/CESM/inputdata/atm/cam/inic/se/HS1994.ne16np4_L80_hybrid.nc'
 !use_topo_file = .true.
 !bnd_topo='/glade/scratch/agupta/model_output/CESM/inputdata/atm/cam/topo/ne16np4l80k2h3_aoa_topo.nc'
 pertlim=1.0D-5

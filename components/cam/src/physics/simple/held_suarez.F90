@@ -262,7 +262,7 @@ contains
           !print *,"lat0 : ",lat0
           !print *,"eps : ",eps
           !print *,"gamma : ",vgamma
-	   print *, "relax_tropical_stratosphere : ", relax_tropical_stratosphere
+	  !print *, "relax_tropical_stratosphere : ", relax_tropical_stratosphere
 
          do i = 1,ncol
            if (pmid(i,k).lt.1e4_r8) then !pre < 100hPa 

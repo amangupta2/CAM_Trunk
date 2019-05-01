@@ -2,7 +2,7 @@
 
 # Wall clock limit is max 12:00:00 = 12hrs for Cheyenne.
 # Make sure to mention the project name.
-export CIMEROOT=~/models/code/trunk/cime
+export CIMEROOT=~/models/code/git_trunk/cime
 
 export TEST_CASE_NAME=ne16np4l40k2h3_aoa_relax_tss_analytic_ueq
 
