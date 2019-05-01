@@ -48,7 +48,7 @@ public :: &
    tracers_register,          &! register constituent
    tracers_implements_cnst,   &! true if named constituent is implemented by this package
    tracers_init_cnst,         &! initialize constituent field
-   tracers_init               ! initialize history fields, datasets
+   tracers_init,              &! initialize history fields, datasets
    tracers_timestep_forcing   ! ag4680@nyu.edu : new function created to force tracer value daily
                               ! Sets time dependent initial tracer values near
                               ! the

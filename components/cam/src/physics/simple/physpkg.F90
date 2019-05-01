@@ -502,7 +502,6 @@ contains
     !---------------------------Local workspace----------------------------
     ! ag4680@nyu.edu : Adding these 3 for AOA
     ! === begin ===
-    type(physics_ptend)                      :: ptend               ! indivdual parameterization tendencies
     integer                                  :: nstep               ! current timestep number
     real(r8)                                 :: zero(pcols)         ! array of zeros
     ! === end ===
