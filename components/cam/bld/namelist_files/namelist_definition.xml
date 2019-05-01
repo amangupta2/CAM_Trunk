@@ -60,6 +60,11 @@
 Set to true to use the Polvani and Kushner stratosphere
 </entry>
 
+<entry id="relax_tropical_stratosphere" type="logical" category="pkstrat"
+        group="pkstrat_nl" valid_values="">
+ Default is true. Set to false to turn off analytical relxation of tropical stratospheric winds.
+</entry>
+
 <entry id="vgamma" type="real" category="pkstrat"
         group="pkstrat_nl" valid_values="">
 The gamma value in the Polvani and Kushner stratosphere that represents the lapse rate in the polar stratosphere.  Default=2.

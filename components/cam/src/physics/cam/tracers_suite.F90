@@ -58,7 +58,7 @@ function get_tracer_name(n)
    ! Clock tracer - to compute age
    ! Delta and Pulse Tracer : for the green's function and age spectrum
    ! Sine Tracer : for a tracer with seasonal cycle.
-   tracer_names  =  (/ 'CLOCK', 'DELTA', 'PULSE', 'SINE' , 'TT_UN'/)
+   tracer_names  =  (/ 'CLOCK', 'DELTA', 'PULSE', 'SINE', 'TT_UN'/)
 
 !      tracer_names  =  (/ 'TT_LW', 'TT_MD', 'TT_HI', 'TTRMD' , 'TT_UN'/)
 

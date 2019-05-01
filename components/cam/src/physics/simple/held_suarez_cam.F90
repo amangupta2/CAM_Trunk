@@ -55,6 +55,7 @@ module held_suarez_cam
 
   !PKSTRAT
   logical :: pkstrat !.True. to use the PK02 TEQ
+  logical :: relax_tropical_stratosphere ! ag4680@nyu.edu : specified wind by default
   real(r8) :: vgamma ! vortex gamma parameter (controlling vortex strength)
   integer :: lat0   ! Polar Vortex boundary
   integer :: eps    ! Hemispheric Assymetry. Seasons
@@ -155,7 +156,7 @@ contains
     ! MODIFIED PKSTRAT
     ! ag4680@nyu.edu : added 2 arguments passed through namelists : eps and lat0
        call held_suarez_1994(pcols, ncol, clat, pmid, &
-       state%u, state%v, state%t, ptend%u, ptend%v, ptend%s, pkstrat, vgamma, eps, lat0)
+       state%u, state%v, state%t, ptend%u, ptend%v, ptend%s, pkstrat, relax_tropical_stratosphere, vgamma, eps, lat0)
     ! END MODIFIED PKSTRAT
 
     ! Note, we assume that there are no subcolumns in simple physics
@@ -184,11 +185,12 @@ contains
   integer :: unitn, ierr
   character(len=*), parameter :: sub = 'pkstrat_readnl'
 
-  ! ag4680@nyu.edu : reading eps and lat0 via namelist too!
-  namelist /pkstrat_nl/ pkstrat, vgamma, eps, lat0
+  ! ag4680@nyu.edu : reading eps, lat0 and relax_tropical_stratosphere via namelist too!
+  namelist /pkstrat_nl/ pkstrat, relax_tropical_stratosphere, vgamma, eps, lat0
 
   !Set default namelist parameters
   pkstrat=.False.
+  relax_tropical_stratosphere = .true.
   vgamma=2._r8
   eps=-10.      ! default eps value
   lat0=-50.     ! default lat0 value
@@ -210,6 +212,7 @@ contains
 
   call mpi_bcast(pkstrat   , 1, mpi_logical, mstrid, mpicom, ierr)
   call mpi_bcast(vgamma    , 1, mpi_real8, mstrid, mpicom, ierr)
+  call mpi_bcast(relax_tropical_stratosphere   , 1, mpi_logical, mstrid, mpicom, ierr)
   ! Aman Gupta : ag4680@nyu.edu : added for 2 new namelist parameters 
   call mpi_bcast(eps       , 1, mpi_integer, mstrid, mpicom, ierr)
   call mpi_bcast(lat0      , 1, mpi_integer, mstrid, mpicom, ierr)

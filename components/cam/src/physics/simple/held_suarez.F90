@@ -86,7 +86,7 @@ contains
   end subroutine held_suarez_1994_init
 
   subroutine held_suarez_1994(pcols, ncol, clat, pmid, &
-       u, v, t, du, dv, s, pkstrat, vgamma, eps, lat0)
+       u, v, t, du, dv, s, pkstrat, relax_tropical_stratosphere, vgamma, eps, lat0)
     !----------------------------------------------------------------------- 
     ! 
     ! Purpose: Implement idealized Held-Suarez forcings
@@ -130,6 +130,7 @@ contains
 
    !PKSRAT
     logical, intent(in) :: pkstrat !pkstrat=.True. to use the PK02 TEQ
+    logical, intent(in) :: relax_tropical_stratosphere
     real(r8), intent(in) :: vgamma !gamma parameter in PK02 (controling vortex strength) 
     integer, intent(in) :: lat0 ! Polar Vortex strength
     integer, intent(in) :: eps  ! hemispherical asymmetry
@@ -173,7 +174,7 @@ contains
     real, parameter :: phi_rlx = 15., rlx_dev=5., damptime=40., damptime2=10.
     real :: ueq, damp_coeff, damp_coeff_max
     real :: fac, pr, rtau
-    logical :: relax_tropical_stratosphere = .true.
+    !logical :: relax_tropical_stratosphere = .true.
     real :: u_sponge = 0., u_1hpa = -65., u_200hpa = -10.
     ! end ==================================================
 
@@ -261,6 +262,7 @@ contains
           !print *,"lat0 : ",lat0
           !print *,"eps : ",eps
           !print *,"gamma : ",vgamma
+	   print *, "relax_tropical_stratosphere : ", relax_tropical_stratosphere
 
          do i = 1,ncol
            if (pmid(i,k).lt.1e4_r8) then !pre < 100hPa 
